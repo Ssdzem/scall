@@ -3,20 +3,29 @@ on:
   pull_request:
   push:
     branches: [ main ]
+
 jobs:
   snakemake-ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Mambaforge
+
+      - name: Set up Miniforge3
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
+          # Use Miniforge3 (recommended); this replaces the old "Mambaforge" variant
+          miniforge-version: latest
+          # We only need base for simple installs (per docs)
           auto-activate-base: true
+          activate-environment: ""
+          # Set channels up front for later installs
+          channels: conda-forge,bioconda
+
       - name: Install snakemake tooling
         shell: bash -l {0}
         run: |
-          mamba install -y -c conda-forge -c bioconda snakemake snakefmt
+          conda install -y -c conda-forge -c bioconda snakemake snakefmt
+
       - name: Lint & dry run (non-fatal until rules exist)
         shell: bash -l {0}
         run: |
