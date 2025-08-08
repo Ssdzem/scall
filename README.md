@@ -1,6 +1,6 @@
 # SCall
 Umbrella Snakemake repo orchestrating:
-- HCA fetch (download/map/matrix)
+- HCA fetch (download HCA/map & matrix STARsolo)
 - scRNA-seq QC & preprocessing (Scanpy/Seurat)
 - Transposable element analysis (stellarscope)
 - GRN (SCENIC/pySCENIC)
