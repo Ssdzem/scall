@@ -5,10 +5,15 @@
 # Python cache
 __pycache__/
 *.pyc
-# Outputs
-results/
+#outputs
+results/**
+!results/
+!results/**/
 !results/**/.gitkeep
-logs/
+
+logs/**
+!logs/
+!logs/**/
 !logs/**/.gitkeep
 # Conda cache (optional, adjust if you prefer to keep)
 .env/
