@@ -1,0 +1,36 @@
+# Snakemake data folders
+fastq_prepros/input/raw/**/*
+!fastq_prepros/input/raw/README.md
+
+fastq_prepros/input/fastq/**/*
+!fastq_prepros/input/fastq/README.md
+
+fastq_prepros/input/index/**/*
+!fastq_prepros/input/index/README.md
+
+fastq_prepros/input/ref/**/*
+!fastq_prepros/input/ref/README.md
+
+fastq_prepros/input/whitelist/**/*
+!fastq_prepros/input/whitelist/README.md
+
+fastq_prepros/output/bam/**/*
+!fastq_prepros/output/bam/README.md
+
+fastq_prepros/output/counts/**/*
+!fastq_prepros/output/counts/README.md
+
+# Rest
+**/envs/
+**/*.yaml.save
+.env/
+
+**/*.log
+**/*.out
+**/tmp/
+
+__pycache__/
+*.pyc
+
+.DS_Store
+*.swp
