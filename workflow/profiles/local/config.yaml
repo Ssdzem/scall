@@ -1,0 +1,9 @@
+cores: 16
+use_conda: true
+conda_frontend: mamba
+printshellcmds: true
+rerun_incomplete: true
+latency_wait: 60
+default_resources:
+  - mem_mb=8000
+  - disk_mb=50000

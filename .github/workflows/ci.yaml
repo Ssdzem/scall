@@ -1,0 +1,25 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+jobs:
+  snakemake-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Mambaforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Mambaforge
+          auto-activate-base: true
+      - name: Install snakemake tooling
+        shell: bash -l {0}
+        run: |
+          mamba install -y -c conda-forge -c bioconda snakemake snakefmt
+      - name: Lint & dry run (non-fatal until rules exist)
+        shell: bash -l {0}
+        run: |
+          snakemake --lint || true
+          snakefmt --check workflow || true
+          snakemake -n -s workflow/Snakefile || true

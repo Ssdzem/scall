@@ -1,0 +1,12 @@
+# Snakemake internals
+.snakemake/
+.snakejob.*
+*.snakemake*
+# Python cache
+__pycache__/
+*.pyc
+# Outputs
+results/
+logs/
+# Conda cache (optional, adjust if you prefer to keep)
+.env/

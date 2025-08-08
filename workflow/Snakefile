@@ -1,0 +1,11 @@
+# Umbrella workflow (skeleton). Fill in module imports as you implement stages.
+configfile: "config/project.yaml"
+
+# Example (uncomment when modules have rules):
+# module hca_fetch:
+#     snakefile: "workflow/modules/hca_fetch/Snakefile"
+#     config: config.get("hca_fetch", {})
+# use rule * from hca_fetch as hca_*
+
+rule all:
+    input: []
