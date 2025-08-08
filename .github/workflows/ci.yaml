@@ -20,6 +20,8 @@ jobs:
           activate-environment: ""
           # Set channels up front for later installs
           channels: conda-forge,bioconda
+          chanel-piority: strict
+          conda-remove-defaults: true
 
       - name: Install snakemake tooling
         shell: bash -l {0}
