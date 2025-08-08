@@ -7,6 +7,8 @@ __pycache__/
 *.pyc
 # Outputs
 results/
+!results/**/.gitkeep
 logs/
+!logs/**/.gitkeep
 # Conda cache (optional, adjust if you prefer to keep)
 .env/
