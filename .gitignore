@@ -17,3 +17,6 @@ logs/**
 !logs/**/.gitkeep
 # Conda cache (optional, adjust if you prefer to keep)
 .env/
+
+#Heavy inputs (resources/)
+resources/
