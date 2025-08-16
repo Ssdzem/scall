@@ -1,0 +1,29 @@
+# workflow/rules/50_map.smk
+
+rule map_reads:
+    """
+    Map per-sample reads with STAR (BAM output).
+    """
+    conda: "workflow/envs/star.yaml"
+    input:
+        fastq1    = os.path.join(fastq_dir, "{project}", "{sample}", "R1.fastq.gz"),
+        fastq2    = os.path.join(fastq_dir, "{project}", "{sample}", "R2.fastq.gz"),
+        index_dir = index_dir,
+        whitelist = lambda wc: wl_for_sample(wc.sample)
+    output:
+        bam = os.path.join(bam_dir, "{project}", "{sample}.bam")
+    threads: threads
+    params:
+        cb_len  = lambda wc: param_map[ chem_map[wc.sample] ]["cb"],
+        umi_len = lambda wc: param_map[ chem_map[wc.sample] ]["umi"],
+        script  = lambda w: scripts["map_reads"]
+    shell:
+        r"""
+        bash "{params.script}" \
+          "{input.fastq1}" \
+          "{input.fastq2}" \
+          "{input.index_dir}" \
+          "{input.whitelist}" \
+          "{output.bam}" \
+          {params.cb_len} {params.umi_len} {threads}
+        """

@@ -1,0 +1,11 @@
+name: star
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+  - star =2.7.11b
+  - samtools >=1.18
+  - pigz
+  - gzip
+  - coreutils
+  - gawk
+  - grep
+  - sed

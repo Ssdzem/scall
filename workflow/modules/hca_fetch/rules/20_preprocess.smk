@@ -1,0 +1,32 @@
+import os
+# workflow/rules/20_preprocess.smk
+
+rule filter_and_preprocess:
+    """
+    Select only needed bundle UUIDs for a sample, concatenate per lane,
+    write canonical R1/R2 into fastq_dir, and keep the bundle uuids per sample
+    """
+    conda: os.path.join(config["envs_dir"], "preproc.yaml")
+    input:
+        raw_project = os.path.join(raw_dir, "{project}"),
+        metadata    = config["metadata_path"]
+    output:
+        r1        = os.path.join(fastq_dir, "{project}", "{sample}", "R1.fastq.gz"),
+        r2        = os.path.join(fastq_dir, "{project}", "{sample}", "R2.fastq.gz"),
+        keep_done = os.path.join(fastq_dir, "{project}", "{sample}", "Bundle_UUIDS", ".complete")
+    params:
+        script=lambda w: scripts["filter_and_preprocess"]
+    shell:
+        r"""
+        python "{params.script}" \
+          --raw-dir "{input.raw_project}" \
+          --sample "{wildcards.sample}" \
+          --project "{wildcards.project}" \
+          --metadata-csv "{input.metadata}" \
+          --out-r1 "{output.r1}" \
+          --out-r2 "{output.r2}" \
+          --keep-dir "$(dirname {output.keep_done})"
+
+        mkdir -p "$(dirname {output.keep_done})"
+        date > "{output.keep_done}"
+        """

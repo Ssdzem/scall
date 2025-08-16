@@ -1,0 +1,17 @@
+# global config
+hca_fetch:
+  # knobs you can tune per-machine or per-profile
+  star_threads: 12
+  genome_fasta: "resources/genomes/GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+  gtf:          "resources/genomes/GRCh38/Homo_sapiens.GRCh38.93.gtf"
+  star_index:   "resources/indices/star/GRCh38"         # directory with STAR index
+  whitelist:    "resources/whitelists/10x/737K-august-2016.txt"
+
+  # sample sheet paths (your existing CSVs)
+  project_curls_path:   "config/proyects_metadata_curls.csv"
+  metadata_path:        "config/proyects_metadata_samples_fastqs.csv"
+
+  # output contracts (don’t change lightly)
+  out_fastq_dir:  "fastq"
+  out_bam_dir:    "bam"
+  out_counts_dir: "counts"

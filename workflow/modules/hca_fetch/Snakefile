@@ -1,0 +1,10 @@
+# workflow/modules/hca_fetch/Snakefile
+# Keep this tiny; resolve includes via workflow.source_path so they are registered in the source-cache.
+
+include: "rules/00_globals.smk"
+include: "rules/10_download.smk"
+include: "rules/20_preprocess.smk"
+include: "rules/30_vibe_check.smk"
+include: "rules/40_index.smk"
+include: "rules/50_map.smk"
+include: "rules/60_matrix.smk"

@@ -1,0 +1,39 @@
+# workflow/rules/30_vibe_check.smk
+
+rule fastq_vibe_check:
+    """
+    Lightweight 10x FASTQ audit before mapping.
+    Writes JSON metrics + a single-line chemistry.txt suggestion.
+    """
+    conda: "workflow/envs/vibe.yaml"
+    input:
+        R1=lambda w: f"{config['fastq_dir']}/{w.project}/{w.sample}/R1.fastq.gz",
+        R2=lambda w: f"{config['fastq_dir']}/{w.project}/{w.sample}/R2.fastq.gz",
+        wl_v2=lambda w: wl_map.get("10x3'v2", ""),
+        wl_v3=lambda w: wl_map.get("10x3'v3", "")
+    output:
+        json      = os.path.join(qc_dir, "{project}", "{sample}_vibe.json"),
+        chemistry = os.path.join(qc_dir, "{project}", "{sample}_chemistry.txt")
+    params:
+        # Metadata chemistry hint (optional)
+        meta_chem=lambda w: (
+            config.get("metadata", {})
+                  .get(w.project, {})
+                  .get(w.sample, {})
+                  .get("chemistry", "unknown")
+        ),
+        max_reads=1_000_000,
+        script   = lambda w: scripts["fastq_vibe_check"]
+    threads: 2
+    shell:
+        r"""
+        python "{params.script}" \
+          --r1 {input.R1} \
+          --r2 {input.R2} \
+          --wl-v2 {input.wl_v2} \
+          --wl-v3 {input.wl_v3} \
+          --metadata-chem {params.meta_chem} \
+          --max-reads {params.max_reads} \
+          --json-out {output.json} \
+          --chem-out {output.chemistry}
+        """

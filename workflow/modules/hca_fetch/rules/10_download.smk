@@ -1,0 +1,25 @@
+import os
+# workflow/rules/10_download.smk
+
+rule download_project:
+    """
+    Download raw bundles (project-level) into raw_dir via your Python driver.
+    """
+    conda: os.path.join(config["envs_dir"], "net.yaml")
+    output:
+        raw_project = temp(directory(os.path.join(raw_dir, "{project}")))
+    params:
+        curl=lambda w: curl_dict[w.project],
+        script=lambda w: scripts["download_project"]
+    resources:
+        net = 1      # <<< throttle concurrent network jobs
+    retries: 3
+    log:
+        os.path.join(qc_dir, "{project}", "_download.log")
+    shell:
+        r'''
+        python "{params.script}" \
+          --curl-cmd "{params.curl}" \
+          --output-dir "{output.raw_project}" \
+          2>&1 | tee -a "{log}"
+        '''

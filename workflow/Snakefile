@@ -1,11 +1,37 @@
-# Umbrella workflow (skeleton). Fill in module imports as you implement stages.
-configfile: "config/project.yaml"
+# workflow/Snakefile — SCALL master
 
-# Example (uncomment when modules have rules):
-# module hca_fetch:
-#     snakefile: "workflow/modules/hca_fetch/Snakefile"
-#     config: config.get("hca_fetch", {})
-# use rule * from hca_fetch as hca_*
+from snakemake.utils import min_version
+min_version("9.9.0")
 
+configfile: "config/config.yaml"
+
+# --- helpers ---------------------------------------------------------------
+import yaml
+def load_yaml_rel(path: str):
+    with open(workflow.source_path(path), "r") as fh:
+        return yaml.safe_load(fh) or {}
+
+# --- module: hca_fetch -----------------------------------------------------
+# NOTE: path is relative to workflow/Snakefile → go up one level
+hca_cfg = load_yaml_rel("../config/params/hca_fetch.yaml")
+
+# CLI passthrough: --config project=SC_SN first_fastq=true
+if "project" in config and config["project"] not in (None, "", "null"):
+    hca_cfg["project"] = config["project"]
+if "first_fastq" in config:
+    hca_cfg["first_fastq"] = config["first_fastq"]
+
+module hca_fetch:
+    snakefile: "modules/hca_fetch/Snakefile"
+    # Inject params into module; this overrides any configfile inside the module.
+    config: hca_cfg
+
+# Import rules with a safe prefix
+use rule * from hca_fetch as hca_fetch__*
+
+# --- default target --------------------------------------------------------
+# Prefer module’s computed targets; allow optional override via config.default_targets
 rule all:
-    input: []
+    input:
+        config.get("default_targets", getattr(hca_fetch, "final_targets", []))
+    default_target: True

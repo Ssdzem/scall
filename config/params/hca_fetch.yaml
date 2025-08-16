@@ -1,0 +1,36 @@
+envs_dir: "../envs"
+raw_dir: "results/hca_fetch/raw"
+fastq_dir: "results/hca_fetch/fastq"
+index_dir: "resources/refdata-gex-GRCh38-2024-A/star/"
+bam_dir: "results/hca_fetch/bam"
+qc_dir: "results/hca_fetch/qc"
+counts_dir: "results/hca_fetch/counts"
+project_curls_path: "config/proyects_metadata_curls.csv"
+metadata_path: "config/proyects_metadata_samples_fastqs.csv"
+genome_fasta: "resources/refdata-gex-GRCh38-2024-A/fasta/genome.fa"
+gtf: "resources/refdata-gex-GRCh38-2024-A/genes/genes.gtf.gz"
+output_dir: "results"
+ref_dir: "resources/refdata-gex-GRCh38-2024-A/genes/"
+star_threads: 20
+sjdb_overhang: 99            # set to max observed R2 length - 1
+genomeSAindexNbases: 14      # recommended for human
+whitelists:                  # add if more chemistries detected
+  "10x3'v2": "resources/whitelists/737K-august-2016.txt"
+  "10x3'v3": "resources/whitelists/3M-february-2018.txt"
+  "10x5'v1": "resources/whitelists/737K-august-2016.txt"
+scripts:
+  download_project: "workflow/modules/hca_fetch/scripts/download_project.py"
+  filter_and_preprocess: "workflow/modules/hca_fetch/scripts/filter_and_preprocess_fastqs.py"
+  fastq_vibe_check: "workflow/modules/hca_fetch/scripts/fastq_vibe_check.py"
+  generate_index: "workflow/modules/hca_fetch/scripts/generate_index.sh"
+  map_reads: "workflow/modules/hca_fetch/scripts/map_reads.sh"
+  matrix_counts: "workflow/modules/hca_fetch/scripts/matrix_counts.sh"
+counts_layer: "filtered"   # options: "filtered" or "raw"
+# Keep "Gene" for now.
+solo_features:
+  - "Gene"                 # exon-only (typical scRNA-seq)
+  # - "GeneFull"           # add if you also want exon+intron (snRNA / velocity)
+  # - "SJ"                 # splice junctions
+  # - "Velocyto"           # spliced/unspliced/ambiguous; requires "Gene" also
+
+project: null #to run all snakemake on all projects by default

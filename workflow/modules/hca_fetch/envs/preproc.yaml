@@ -1,0 +1,11 @@
+name: preproc
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+  - python >=3.10
+  - pandas
+  - pigz
+  - gzip
+  - coreutils
+  - gawk
+  - grep
+  - sed

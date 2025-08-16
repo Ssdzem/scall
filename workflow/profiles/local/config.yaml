@@ -1,9 +1,16 @@
 cores: 16
-use_conda: true
-conda_frontend: mamba
 printshellcmds: true
-rerun_incomplete: true
-latency_wait: 60
-default_resources:
+rerun-incomplete: true
+latency-wait: 60
+
+# Hyphenated; list form allows multiple defaults
+default-resources:
   - mem_mb=8000
   - disk_mb=50000
+
+# Snakemake 8+ replacement for --use-conda
+software-deployment-method:
+  - conda
+
+# Optional; mamba is already the default in recent versions
+conda-frontend: mamba

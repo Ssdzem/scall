@@ -1,0 +1,12 @@
+name: mapping
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - star
+  - samtools
+  - fastqc
+  - multiqc
+  - subread
+  - pandas
