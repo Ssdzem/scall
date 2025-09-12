@@ -1,0 +1,5 @@
+# keep module tiny; config is injected by master Snakefile
+include: "rules/00_globals.smk"
+include: "rules/10_write_h5ad.smk"
+include: "rules/20_load_h5ad.smk"
+

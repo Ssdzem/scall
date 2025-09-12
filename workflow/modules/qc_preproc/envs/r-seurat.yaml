@@ -1,0 +1,12 @@
+name: r-seurat
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base>=4.3
+  - r-seurat>=5     # toolkit
+  - r-seuratobject  # object class
+  - r-seuratdisk    # h5Seurat and Convert() to h5ad
+  - r-matrix
+  - r-optparse

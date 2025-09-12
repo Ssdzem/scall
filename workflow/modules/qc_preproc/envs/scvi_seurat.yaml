@@ -1,0 +1,12 @@
+name: scvi-seurat
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  # R bridge (lets you run Python from R via reticulate)
+  - r-base
+  - r-reticulate
+  - r-essentials
+  # scvi-tools (brings PyTorch & friends on CPU via conda-forge)
+  - scvi-tools>=1.3
