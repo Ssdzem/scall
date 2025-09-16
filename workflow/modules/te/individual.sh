@@ -1,5 +1,5 @@
-PROJ="etoposide"
-SAMPLE="50m_10d"
+PROJ="control"
+SAMPLE="PDL24"
 # create a directory for stellarscope individual results
 mkdir -p ../../../results/te/"$PROJ"/"$SAMPLE"/individual
 

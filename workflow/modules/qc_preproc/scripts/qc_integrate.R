@@ -1,6 +1,7 @@
 library(Seurat)
 library(SeuratData)
 library(SeuratWrappers)
+library(reticulate)
 
 csv_path       <- "/datos/sensence/emilio/scall/config/proyects_metadata_samples_fastqs.csv"
 root_obj       <- "/datos/sensence/emilio/scall/results/qc_preproc"
