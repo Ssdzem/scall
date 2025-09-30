@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 PROJ="etoposide"
 SAMPLE="50m_10d"
 # run STAR alignment

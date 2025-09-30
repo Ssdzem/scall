@@ -1,0 +1,45 @@
+# config/params/qc_preproc.yaml
+# Decide the platform
+
+backend: seurat
+layer: "filtered"               # STARsolo layer: filtered|raw
+mito_regex: "^MT-"            # human; for mouse use "^mt-"
+convert_to_h5ad: true         # also emit .h5ad via SeuratDisk
+
+# --- locations ---------------------------------------------------------------
+envs_dir: "../envs"
+
+# Input root produced by hca_fetch (STARsolo outputs by project/sample/layer)
+counts_dir: "results/hca_fetch/counts"
+
+# Outputs for this module
+qc_root: "results/qc_preproc"
+logs_dir: "logs/qc_preproc"
+reports_dir: "results/qc_preproc/_reports"
+
+
+# --- scripts used by qc_preproc ---------------------------------------------
+scripts:
+  write_h5ad: "workflow/modules/qc_preproc/scripts/00_write_h5ad.py"
+
+# --- notebooks used by qc_preproc ---------------------------------------------
+
+notebooks:
+  load_h5ad: "workflow/modules/qc_preproc/vendor/hcc_notebooks/pipeline/01_load_h5ad.py.ipynb"
+
+
+# --- QC thresholds (match earlier rule + give room for future steps) ---------
+min_genes: 200          # used in load_write_h5ad (scanpy.pp.filter_cells)
+min_cells_gene: 10      # used in load_write_h5ad (scanpy.pp.filter_genes)
+max_genes: 6000         # for later notebooks (filtering outliers)
+max_mito_frac: 0.20     # for later notebooks
+
+# --- execution defaults ------------------------------------------------------
+report_html: true       # if/when we export HTML reports from notebooks
+threads_default: 2
+h5ad_basename: "00_raw.h5ad"  # output name for the 00_io stage
+load_tag: "01_loaded.h5ad"    # output name for the 01_load_h5ad stage
+
+
+# --- selection ---------------------------------------------------------------
+project: null           # CLI: --config project=SC_SN (same pattern as hca_fetch)

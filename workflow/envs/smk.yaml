@@ -1,0 +1,13 @@
+name: scall-smk
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - snakemake>=9,<10
+  - ipykernel
+  - notebook
+  - jupyterlab
+  - graphviz
+  - pip

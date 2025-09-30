@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 PROJ="control"
 SAMPLE="PDL24"
 # create a directory for stellarscope individual results

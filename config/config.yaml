@@ -1,4 +1,5 @@
 # global config
+# first module HCA_fetch
 hca_fetch:
   # knobs you can tune per-machine or per-profile
   star_threads: 12
@@ -15,3 +16,6 @@ hca_fetch:
   out_fastq_dir:  "fastq"
   out_bam_dir:    "bam"
   out_counts_dir: "counts"
+# second module qc_preproc
+qc_preproc:
+  # wtf

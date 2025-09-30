@@ -29,9 +29,33 @@ module hca_fetch:
 # Import rules with a safe prefix
 use rule * from hca_fetch as hca_fetch__*
 
+# --- module: qc_preproc ----------------------------------------------------
+# Keep param injection aligned to upstream (project + layer from hca_fetch)
+qc_cfg = load_yaml_rel("../config/params/qc_preproc.yaml")
+
+# Prefer CLI override for project if provided; else inherit from hca_fetch
+if "project" in config and config["project"] not in (None, "", "null"):
+    qc_cfg["project"] = config["project"]
+elif "project" in hca_cfg and hca_cfg["project"] not in (None, "", "null"):
+    qc_cfg.setdefault("project", hca_cfg["project"])
+
+# Make the matrix layer default match hca_fetch’s counts_layer (e.g., "filtered")
+if hca_cfg.get("counts_layer"):
+    qc_cfg.setdefault("layer", hca_cfg["counts_layer"])
+
+module qc_preproc:
+    snakefile: "modules/qc_preproc/Snakefile"
+    config: qc_cfg
+
+use rule * from qc_preproc as qc_preproc__*
+
 # --- default target --------------------------------------------------------
-# Prefer module’s computed targets; allow optional override via config.default_targets
+# Prefer next-module targets; allow override via config.default_targets
 rule all:
     input:
-        config.get("default_targets", getattr(hca_fetch, "final_targets", []))
+        config.get(
+            "default_targets",
+            getattr(qc_preproc, "final_targets",
+                    getattr(hca_fetch, "final_targets", []))
+        )
     default_target: True
