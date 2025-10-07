@@ -51,10 +51,3 @@ obj <- IntegrateLayers(
   new.reduction = "integrated.scvi",
   conda_env = "../miniconda3/envs/scvi-env", verbose = FALSE
 )
-
-
-
-
-
-
-

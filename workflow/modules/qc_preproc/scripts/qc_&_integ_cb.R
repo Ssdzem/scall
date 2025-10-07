@@ -59,9 +59,9 @@ in_vitro_seurat_cg <- Reduce(f = merge, seurat_objects_cg)
 ############# QC ############
 qc_pipeline <- function(obj) {
   obj <- NormalizeData(obj)
-  obj <- JoinLayers(obj, assay = "RNA")
+  obj <- JoinLayers(obj, assay = "RNA") # nolint
   obj <- PercentageFeatureSet(obj, pattern = "^MT-", col.name = "percent.mt")
-  obj <- subset(obj, subset = percent.mt < 30)
+  obj <- subset(obj, subset = percent.mt < 30) # nolint
   obj[["RNA"]] <- split(obj[["RNA"]], obj$orig.ident)
   obj <- FindVariableFeatures(obj)
   obj <- ScaleData(obj)
@@ -69,8 +69,10 @@ qc_pipeline <- function(obj) {
   obj <- IntegrateLayers(obj, HarmonyIntegration, new.reduction = "harmony")
   obj <- FindNeighbors(obj, reduction = "harmony", dims = 1:30)
   obj <- FindClusters(obj, resolution = 0.5, cluster.name = "harmony_clusters")
-  obj <- RunUMAP(obj, reduction = "harmony",
-                 dims = 1:50, reduction.name = "harmony_umap")
+  obj <- RunUMAP(obj,
+    reduction = "harmony",
+    dims = 1:50, reduction.name = "harmony_umap"
+  )
   obj
 }
 
