@@ -20,19 +20,20 @@ preintegrated_dir_for <- function(project, sample) {
 
 objs <- list()
 for (i in seq_len(nrow(df))) {
-  project <- proj_col[i]; sample <- samp_col[i]
+  project <- proj_col[i]
+  sample <- samp_col[i]
   path <- preintegrated_dir_for(project, sample)
-  if (!file.exists(path)) { warning("Missing: ", path); next }
+  if (!file.exists(path)) {
+    warning("Missing: ", path)
+    next
+  }
   obj <- readRDS(path)
-  
   # add metadata (either assignment or AddMetaData; both are valid)
   obj$project <- project
   obj$sample  <- sample  # AddMetaData(obj, metadata = data.frame(project=project, sample=sample)) is also fine
-  
   # ensure unique barcodes across samples
   obj <- RenameCells(obj, add.cell.id = sample)
-  message("loading:",path)
-  
+  message("loading:", path)
   objs[[sample]] <- obj
 }
 
