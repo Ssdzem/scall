@@ -4,15 +4,11 @@
     "workbench.colorTheme": "SynthWave '84",
     // make Ctrl+Enter always target YOUR focused terminal/radian:
     "r.alwaysUseActiveTerminal": true,
-
     // required for radian & multi-line sends:
     "r.bracketedPaste": true,
-
     // viewers/plot/help/workspace panels:
     "r.sessionWatcher": true,
     "r.plot.useHttpgd": true,
-
     // paths (adjust to your box):
-    "r.rterm.linux": "/path/to/radian",   // or just "radian" if on PATH
-    "r.rpath.linux": "/usr/bin/R"         // plain R for the language server
+    "r.rpath.linux": "/usr/bin/R" // plain R for the language server
 }

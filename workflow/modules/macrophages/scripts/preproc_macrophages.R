@@ -1,3 +1,5 @@
+reticulate::py_discover_config()
+
 suppressPackageStartupMessages({
   library(Seurat)
   library(tidyverse)
@@ -9,6 +11,7 @@ suppressPackageStartupMessages({
 })
 
 csv_path <- "config/proyects_metadata_samples_fastqs.csv"
+mdmeta_path <- "config/liver_data.csv"
 root_counts <- "/datos/sensence/emilio/liver_sc/fastq_prepros/output/counts"
 out_root <- "results/macrophages"
 layer <- "filtered"
@@ -22,6 +25,8 @@ df <- unique(df[, c("proyect", "ident_sample")])
 proj_col <- df$proyect
 samp_col <- df$ident_sample
 
+md_meta <- read.csv(mdmeta_path, header = TRUE)
+
 # ---- HELPERS ----
 mtx_dir_for <- function(project, sample, layer) {
   file.path(
@@ -29,6 +34,38 @@ mtx_dir_for <- function(project, sample, layer) {
     paste0(sample, "_matrix_Solo.out"), "Gene", layer
   )
 }
+md_meta <- md_meta |>
+  dplyr::select(-source_metadata, -cells_estimate, -source_data) |>
+  dplyr::rename(project = proyect,
+                sample = ident)
+#grab the middle value of the intervals
+md_meta <- md_meta %>%
+  mutate(
+    age = if_else(
+      # condition: contains a dash, i.e., it's a range
+      str_detect(age, "-"),
+      
+      # TRUE case → compute midpoint
+      {
+        # extract the two numbers from "min-max"
+        parts <- str_split(age, "-", simplify = TRUE)
+        mid <- (as.numeric(parts[,1]) + as.numeric(parts[,2])) / 2
+        as.character(mid)
+      },
+      
+      # FALSE case → leave as is
+      age
+    ),
+    # finally convert to numeric
+    age = as.numeric(age)
+  )
+md_meta <- md_meta %>%
+  mutate(
+    aging = if_else(age >= 50, "aged", "young")
+  )
+md_meta <- md_meta %>%
+  filter(project != "chan_zuckerberg")
+#classify it as young or aged on cutoff 50 years
 
 # ---- MERGING ----
 obj_list <- list()
@@ -153,7 +190,7 @@ hca_liver_scvi[["scvi"]] <- CreateDimReducObject(
   assay = DefaultAssay(hca_liver_scvi)
 )
 hca_liver_scvi <- FindNeighbors(hca_liver_scvi, dims = 1:10, reduction = "scvi")
-hca_liver_scvi <- FindClusters(hca_liver_scvi, resolution = 1)
+hca_liver_scvi <- FindClusters(hca_liver_scvi, resolution = 0.5)
 
 hca_liver_scvi <- RunUMAP(hca_liver_scvi,
   dims = 1:10,
@@ -161,7 +198,7 @@ hca_liver_scvi <- RunUMAP(hca_liver_scvi,
   n.components = 2,
   reduction.name = "scvi_umap"
 )
-DimPlot(hca_liver_scvi, reduction = "umap", pt.size = 3)
+DimPlot(hca_liver_scvi, reduction = "scvi_umap", pt.size = 3)
 p1 <- DimPlot(hca_liver_scvi, reduction = "scvi_umap", group.by = "orig.ident", pt.size = 2)
 p1
 saveRDS(hca_liver_scvi,
@@ -169,11 +206,7 @@ saveRDS(hca_liver_scvi,
 )
 
 # ---- Harmony integration ----
-hca_liver_har[["RNA"]] <- split(
-  hca_liver_raw[["RNA"]],
-  hca_liver_raw$orig.ident
-)
-hca_liver_har <- RunPCA(hca_liver_raw, npcs = 50)
+hca_liver_har <- hca_liver_raw
 hca_liver_har <- IntegrateLayers(hca_liver_har,
   HarmonyIntegration,
   new.reduction = "harmony"
@@ -195,27 +228,93 @@ saveRDS(hca_liver_har,
   file = file.path(out_root, "hca_liver_har.rds")
 )
 
-# ---- Macrphage exploring ----
-macrophages <- subset(hca_liver_raw, cells = WhichCells(
-  hca_liver_raw,
-  expression =
-    (CD68 > 0.5 |
-      ADGRE1 > 0.5 |
-      ITGAM > 0.5 |
-      CSF1R > 0.5 |
-      MERTK > 0.5 |
-      FCGR1A > 0.5 |
-      MARCO > 0.5) &
-      PTPRC > 0.5,
-  slot = "data"
-))
+# ---- Macrphage exploring har ----
+FeaturePlot(
+  hca_liver_har, #or hca_liver_har
+  features = c("CD68", "ADGRE1", "ITGAM", "CSF1R", "MERTK", "FCGR1A", "MARCO", "PTPRC"),
+  reduction = "scvi_umap",
+  min.cutoff = "q05",
+  max.cutoff = "q95",
+  order = TRUE, # plot high-expressers on top
+  slot = "data" # use normalized log1p data for plotting
+)
+p <- DimPlot(
+  hca_liver_har, reduction = "harmony_umap",
+  label = TRUE, repel = TRUE, label.size = 5,
+  raster = TRUE
+) + NoLegend()
 
+# ---- Macrophage obj cleaning ----
+macrophages <- subset(
+  hca_liver_har,
+  subset = harmony_clusters %in% c(7, 8, 10, 17, 23)
+)
+
+#reprocess it
+DefaultAssay(macrophages) <- "RNA"
 macrophages <- NormalizeData(macrophages)
-macrophages <- JoinLayers(macrophages, assay = "RNA") # nolint
-macrophages <- PercentageFeatureSet(macrophages, pattern = "^MT-", col.name = "percent.mt")
-macrophages <- subset(macrophages, subset = percent.mt < 30) # nolint
-macrophages[["RNA"]] <- split(macrophages[["RNA"]], macrophages$orig.ident)
-macrophages <- FindVariableFeatures(macrophages)
-macrophages <- ScaleData(macrophages)
-macrophages <- RunPCA(macrophages, npcs = 50)
-sc <- import("scanpy", convert = FALSE)
+macrophages <- FindVariableFeatures(macrophages, nfeatures = 3000)
+macrophages <- ScaleData(macrophages, features = VariableFeatures(macrophages))
+macrophages <- RunPCA(macrophages, features = VariableFeatures(macrophages))
+macrophages <- IntegrateLayers(macrophages,
+                               HarmonyIntegration,
+                               new.reduction = "harmony")
+macrophages <- FindNeighbors(macrophages,
+                             reduction = "harmony",
+                             dims = 1:30)
+macrophages <- FindClusters(macrophages, resolution = 0.3)
+macrophages <- RunUMAP(macrophages,
+                       reduction = "harmony",
+                       reduction.name = "harmony_umap",
+                       dims = 1:30)
+try(httpgd::hgd_close(all = TRUE), silent = TRUE)
+if (!is.null(dev.list())) graphics.off()
+httpgd::hgd(port = 0)
+httpgd::hgd_browse()
+DimPlot(
+  macrophages, reduction = "harmony_umap",
+  label = TRUE, repel = TRUE, label.size = 5,
+  raster = TRUE
+) + NoLegend()
+FeaturePlot(macrophages,
+            features = c("TIMD4","MARCO","VSIG4","CD5L","TREM2","CD9","SPP1"),
+            reduction = "harmony_umap", min.cutoff = "q05", max.cutoff = "q95", order = TRUE)
+
+Idents(macrophages) <- "seurat_clusters"
+macrophages <- JoinLayers(macrophages, assay = "RNA")
+library(presto)
+markers <- FindAllMarkers(macrophages, only.pos = TRUE, logfc.threshold = 0.25)
+head(markers[order(markers$avg_log2FC, decreasing = TRUE), ], 20)
+
+FeaturePlot(macrophages,
+            features = c("CDKN1A", "CDKN2A"),
+            reduction = "harmony_umap",
+            min.cutoff = "q05",
+            max.cutoff = "q95",
+            order = TRUE)
+
+#missing a solid anotation for marophage subtype
+
+macrophages@meta.data$barcodes <- rownames(macrophages@meta.data)
+macrophages@meta.data <- macrophages@meta.data %>%
+  left_join(
+    md_meta %>% select(-project),  # remove duplicate column
+    by = "sample"
+  )
+rownames(macrophages@meta.data) <- macrophages@meta.data$barcodes
+DefaultAssay(macrophages) <- "RNA"
+
+# ---- DE of interesting clusters ----
+mac_c3 <- subset(macrophages,
+                 subset = seurat_clusters == 3)
+Idents(mac_c3) <- "aging"
+deg_c3 <- FindMarkers(
+  mac_c3,
+  ident.1 = "aged",
+  ident.2 = "young",
+  test.use = "MAST",                       # or "wilcox"
+  min.pct = 0.1,
+  logfc.threshold = 0,                     # keep all; filter later (e.g., abs(log2FC)>=0.25)
+  verbose = FALSE
+)
+# missing robust pseudobulk DE

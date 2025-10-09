@@ -11,5 +11,6 @@ dependencies:
   - r-sceasy
   - anndata
   - loompy
+  - radian
   # scvi-tools (brings PyTorch & friends on CPU via conda-forge)
   - scvi-tools>=1.3
