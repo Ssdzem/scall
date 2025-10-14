@@ -15,7 +15,7 @@ mdmeta_path <- "config/liver_data.csv"
 root_counts <- "/datos/sensence/emilio/liver_sc/fastq_prepros/output/counts"
 out_root <- "results/macrophages"
 layer <- "filtered"
-
+grep()
 dir.create(out_root, showWarnings = FALSE, recursive = TRUE)
 
 # ---- READ METADATA ----
@@ -228,7 +228,7 @@ saveRDS(hca_liver_har,
   file = file.path(out_root, "hca_liver_har.rds")
 )
 
-# ---- Macrphage exploring har ----
+# ---- Macrophage exploring har ----
 FeaturePlot(
   hca_liver_har, #or hca_liver_har
   features = c("CD68", "ADGRE1", "ITGAM", "CSF1R", "MERTK", "FCGR1A", "MARCO", "PTPRC"),
@@ -278,7 +278,10 @@ DimPlot(
 ) + NoLegend()
 FeaturePlot(macrophages,
             features = c("TIMD4","MARCO","VSIG4","CD5L","TREM2","CD9","SPP1"),
-            reduction = "harmony_umap", min.cutoff = "q05", max.cutoff = "q95", order = TRUE)
+            reduction = "harmony_umap",
+            min.cutoff = "q05",
+            max.cutoff = "q95",
+            order = TRUE)
 
 Idents(macrophages) <- "seurat_clusters"
 macrophages <- JoinLayers(macrophages, assay = "RNA")
@@ -307,6 +310,7 @@ DefaultAssay(macrophages) <- "RNA"
 # ---- DE of interesting clusters ----
 mac_c3 <- subset(macrophages,
                  subset = seurat_clusters == 3)
+#exploratory DE, proceed to pseudobulk for robust analysis
 Idents(mac_c3) <- "aging"
 deg_c3 <- FindMarkers(
   mac_c3,
@@ -317,4 +321,109 @@ deg_c3 <- FindMarkers(
   logfc.threshold = 0,                     # keep all; filter later (e.g., abs(log2FC)>=0.25)
   verbose = FALSE
 )
-# missing robust pseudobulk DE
+deg_c3_clean <- deg_c3 %>%
+  tibble::rownames_to_column("gene") %>%
+  filter(p_val_adj < 0.05, abs(avg_log2FC) > 1) %>%
+  select(gene, avg_log2FC, p_val_adj) %>%
+  arrange(desc(avg_log2FC))
+#plot it
+deg_c3_clean %>%
+  arrange(desc(avg_log2FC)) %>%
+  slice_head(n = 10) %>%
+  bind_rows(deg_c3_clean %>% arrange(avg_log2FC) %>% slice_head(n = 10)) %>%
+  mutate(
+    gene = if_else(p_val_adj == 0, paste0(gene, "*"), gene),
+    gene = factor(gene, levels = gene[order(avg_log2FC)])
+  ) %>%
+  ggplot(aes(x = avg_log2FC, y = gene)) +
+  geom_col(color = "black", fill = "gray70") +
+  labs(
+    title = "DE young vs aged Kupffer cells",
+    x = "Average log2 Fold Change",
+    y = NULL,
+    caption = "* adjusted p-value = 0"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+#robust pseudobulk
+library(SingleCellExperiment)
+library(muscat)
+library(edgeR)
+
+sce <- as.SingleCellExperiment(mac_c3)
+colData(sce)$aging <- factor(colData(sce)$aging, levels = c("aged", "young"))
+sce <- prepSCE(sce, kid = "seurat_clusters", sid = "sample", gid = "aging")
+# Aggregate raw counts to pseudobulk by cluster × sample
+pb <- aggregateData(sce, assay = "counts", fun = "sum",
+                    by = c("cluster_id", "sample_id"))
+
+## Rebuild design & run pbDS (young vs aged; aged as reference)
+design   <- model.matrix(~ group_id, data = colData(pb))
+coef_idx <- match("group_idyoung", colnames(design))
+res      <- pbDS(pb,
+                 method = "edgeR",
+                 design = design,
+                 coef = coef_idx)
+
+degps_c3 <- res$table$group_idyoung$"3"
+degps_c3 <- degps_c3 |>
+  dplyr::filter(p_adj.loc < 0.05, abs(logFC) > 1) |>
+  dplyr::arrange(p_adj.loc)
+
+degps_c3 %>%
+  arrange(desc(logFC)) %>%
+  slice_head(n = 10) %>%
+  bind_rows(degps_c3 %>% arrange(logFC) %>% slice_head(n = 10)) %>%
+  arrange(desc(logFC)) %>%
+  mutate(gene = fct_reorder(gene, logFC)) %>%
+  ggplot(aes(x = logFC, y = gene)) +
+  geom_col(color = "black", fill = "gray70") +
+  labs(
+    title = "DE young vs aged Kupffer cells",
+    x = "Average log2 Fold Change",
+    y = "DE pseudobulk genes"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+# ---- Diff abundance of clusters ----
+#plot abundance (roughly)
+library(scales)
+df <- tibble::tribble(
+  ~stage,         ~group,  ~n,
+  "Subjects",     "Young",  11,
+  "Subjects",     "Aged",   16,
+  "Macrophages",  "Young",  6944,
+  "Macrophages",  "Aged",   19452,
+  "Kupffer",      "Young",  855,
+  "Kupffer",      "Aged",   2666
+) %>%
+  mutate(stage = factor(stage, levels = c("Subjects","Macrophages","Kupffer"))) %>%
+  group_by(stage) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+# labels only at the rightmost stage to avoid clutter
+lab_right <- df %>% filter(stage == "Kupffer") %>%
+  mutate(lbl = paste0(group, "  ", percent(prop, accuracy = 0.1), " (n=", scales::comma(n), ")"))
+
+ggplot(df, aes(x = stage, y = prop, group = group)) +
+  geom_line(aes(linetype = group), linewidth = 1) +
+  geom_point(aes(shape = group), size = 3) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  geom_text(
+    data = lab_right,
+    aes(label = lbl),
+    hjust = -0.05, vjust = 0.5, size = 3.5
+  ) +
+  coord_cartesian(clip = "off") +
+  labs(
+    title = "Shift in proportions from subjects → macrophages → Kupffer cells",
+    subtitle = "Young vs Aged across stages; numbers on the right show proportion and counts",
+    x = NULL, y = "Proportion"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "none",
+    plot.margin = margin(5, 40, 5, 5) # room for right-side labels
+  )
